@@ -13,6 +13,9 @@ const productDom = document.querySelector('.products-center')
 // Cart Item
 let cart = []
 
+// ButtonsDOM
+let buttonsDOM = []
+
 // Getting Products
 class Products {
   async getProducts() {
@@ -59,14 +62,77 @@ class UI {
     })
     productDom.innerHTML = result
   }
+
+  getBagButton() {
+    const buttons = [...document.querySelectorAll('.bag-btn')]
+
+    buttonsDOM = buttons
+    buttons.forEach((button) => {
+      // let id = button.getAttribute('data-id')
+      let id = button.dataset.id
+      let inCart = cart.find((item) => item.id === id)
+      if (inCart) {
+        button.innerText = 'In Cart'
+        button.disabled
+      } else {
+        button.addEventListener('click', (event) => {
+          // console.log(event.target.dataset.id)
+          event.target.innerText = 'In Cart'
+          event.target.disabled = true
+          //get product from Products
+          let cartItem = { ...Storage.getProduct(id), amount: 1 }
+          //Add Product to Cart
+          cart = [...cart, cartItem]
+          //Add Cart to Local Storage
+          Storage.saveCart(cart)
+          //Set Cart Values
+          this.setCartValues(cart)
+        })
+      }
+    })
+  }
+  setCartValues(cart) {
+    let tempTotal = 0
+    let itemsTotal = 0
+
+    cart.forEach((item) => {
+      tempTotal += item.price * item.amount
+      itemsTotal += item.amount
+    })
+    cartTotal.innerText = parseFloat(tempTotal.toFixed(2))
+    cartItems.innerHTML = itemsTotal
+    console.log(tempTotal, itemsTotal)
+  }
 }
 
 //local Storage
+class Storage {
+  static saveProducts(products) {
+    localStorage.setItem('products', JSON.stringify(products))
+  }
+
+  static getProduct(id) {
+    let product = JSON.parse(localStorage.getItem('products'))
+    return product.find((product) => product.id === id)
+  }
+
+  static saveCart(cart) {
+    localStorage.setItem('cart', JSON.stringify(cart))
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const ui = new UI()
   const products = new Products()
 
   //get all Products
-  products.getProducts().then((products) => ui.displayProducts(products))
+  products
+    .getProducts()
+    .then((products) => {
+      ui.displayProducts(products)
+      Storage.saveProducts(products)
+    })
+    .then(() => {
+      ui.getBagButton()
+    })
 })
